@@ -1,0 +1,10 @@
+[package]
+name = "markdown-photo-minutes-generator"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+[dev-dependencies]
+speculoos = { version = "0.11.0", default-features = false }
+tempfile = "3.5.0"
