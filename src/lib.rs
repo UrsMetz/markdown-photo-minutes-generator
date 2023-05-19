@@ -89,4 +89,19 @@ mod tests {
         }]);
         Ok(())
     }
+
+    #[test]
+    fn image_paths_are_absolute() -> anyhow::Result<()> {
+        let dir = tempfile::tempdir()?;
+        let section_path = dir.path().join("abc");
+        create_dir(&section_path)?;
+        let image_path = section_path.join("abc.jpg");
+        fs::File::create(image_path)?;
+
+        let minutes = create_minutes(dir.path())?;
+
+        let mut paths = minutes.sections.into_iter().flat_map(|s| s.image_files);
+        assert_that!(paths.all(|p| p.is_absolute())).is_true();
+        Ok(())
+    }
 }
