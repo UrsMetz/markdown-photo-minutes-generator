@@ -2,6 +2,8 @@ use std::fs;
 use std::fs::DirEntry;
 use std::path::{Path, PathBuf};
 
+mod image_operations;
+
 #[derive(Eq, PartialEq, Debug, Clone)]
 struct Section {
     name: String,
