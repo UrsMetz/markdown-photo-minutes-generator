@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.71"
+fs-err = "2.9.0"
 image = { version = "0.24.6", default-features = false, features = ["jpeg"] }
 
 [dev-dependencies]

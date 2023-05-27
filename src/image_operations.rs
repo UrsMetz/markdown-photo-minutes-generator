@@ -1,5 +1,5 @@
+use anyhow::Context;
 use image::imageops::FilterType;
-use std::fs;
 use std::io::Write;
 use std::path::Path;
 
@@ -8,13 +8,19 @@ fn save_as_resized_image<P: AsRef<Path>>(
     dest_image_path: P,
     ratio: f32,
 ) -> anyhow::Result<()> {
-    let source_image = image::io::Reader::open(&source_image_path)?.decode()?;
+    let source_image = image::io::Reader::open(&source_image_path)
+        .with_context(|| "source file does not exist")?
+        .decode()?;
     let source_width = source_image.width();
     let source_height = source_image.height();
     let new_width = calculate_new_dimension(ratio, source_width);
     let new_height = calculate_new_dimension(ratio, source_height);
     let dest_image = source_image.resize(new_width, new_height, FilterType::Gaussian);
-    let mut dest_file = fs::File::create(dest_image_path)?;
+    let mut dest_file = fs_err::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(dest_image_path.as_ref())
+        .context("destination file exists")?;
     dest_image.write_to(&mut dest_file, image::ImageOutputFormat::Jpeg(100))?;
     dest_file.flush()?;
     Ok(())
@@ -52,6 +58,43 @@ mod tests {
         assert_that!(dynamic_image.width()).is_greater_than_or_equal_to(68);
         assert_that!(dynamic_image.height()).is_less_than_or_equal_to(144);
         assert_that!(dynamic_image.height()).is_greater_than_or_equal_to(140);
+
+        Ok(())
+    }
+
+    #[test]
+    fn fails_when_source_file_does_not_exist() -> anyhow::Result<()> {
+        let dir = tempfile::tempdir()?;
+        let section_path = dir.path().join("abc");
+        let dest_path = dir.path().join("dest");
+        fs::create_dir(section_path)?;
+        let source_image_path = Path::new("./src/does-not-exist.jpg");
+
+        fs::create_dir(&dest_path)?;
+        let dest_image_path = dest_path.join("abc.dest.jpg");
+
+        let res = save_as_resized_image(source_image_path, dest_image_path.as_path(), 0.5);
+        let err_desc = assert_that!(res).is_err().subject.to_string();
+        assert_that!(err_desc).contains("source file");
+
+        Ok(())
+    }
+
+    #[test]
+    fn fails_when_destination_file_already_exists() -> anyhow::Result<()> {
+        let dir = tempfile::tempdir()?;
+        let section_path = dir.path().join("abc");
+        let dest_path = dir.path().join("dest");
+        fs::create_dir(section_path)?;
+        let source_image_path = Path::new("./src/empty-100x200.jpg");
+
+        fs::create_dir(&dest_path)?;
+        let dest_image_path = dest_path.join("abc.dest.jpg");
+        fs::File::create(&dest_image_path)?;
+
+        let res = save_as_resized_image(source_image_path, dest_image_path.as_path(), 0.5);
+        let err_desc = assert_that!(res).is_err().subject.to_string();
+        assert_that!(err_desc).contains("destination file");
 
         Ok(())
     }
