@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use std::fs;
 use std::fs::DirEntry;
 use std::path::{Path, PathBuf};
@@ -34,14 +35,33 @@ fn create_section(dir_entry: DirEntry) -> anyhow::Result<Section> {
     })
 }
 
+fn create_dest_image_path(
+    source_image_path: impl AsRef<Path>,
+    dest_image_root_path: impl AsRef<Path>,
+) -> anyhow::Result<PathBuf> {
+    if source_image_path.as_ref().is_relative() {
+        return Err(anyhow!(
+            "source path must be absolute but is: {}",
+            source_image_path.as_ref().to_string_lossy()
+        ));
+    }
+
+    let file_name = source_image_path
+        .as_ref()
+        .file_name()
+        .ok_or(anyhow!("no file"))?;
+    Ok(dest_image_root_path.as_ref().join(file_name))
+}
+
 #[cfg(test)]
 mod tests {
     use std::fs;
     use std::fs::create_dir;
+    use std::path::{Path, PathBuf};
 
     use speculoos::prelude::*;
 
-    use crate::{create_minutes, Section};
+    use crate::{create_dest_image_path, create_minutes, Section};
 
     #[test]
     fn minutes_from_non_existing_parent_dir_is_err() -> anyhow::Result<()> {
@@ -105,5 +125,25 @@ mod tests {
         let mut paths = minutes.sections.into_iter().flat_map(|s| s.image_files);
         assert_that!(paths.all(|p| p.is_absolute())).is_true();
         Ok(())
+    }
+
+    #[test]
+    fn create_dest_image_path_absolute() {
+        let source_image_path = Path::new("/a/b/c.jpg");
+        let dest_image_root_path = Path::new("/a/x");
+
+        let dest_image_path = create_dest_image_path(source_image_path, dest_image_root_path);
+        assert_that!(dest_image_path).is_ok_containing(&PathBuf::from("/a/x/c.jpg"));
+    }
+
+    #[test]
+    fn create_dest_image_path_relative_source_path_results_in_err() {
+        let source_image_path = Path::new("a/b/c.jpg");
+        let dest_image_root_path = Path::new("/a/x");
+
+        let dest_image_path = create_dest_image_path(source_image_path, dest_image_root_path);
+        assert_that!(dest_image_path)
+            .is_err()
+            .matches(|e| e.to_string().contains("source path must be absolute"));
     }
 }
