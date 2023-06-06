@@ -4,6 +4,7 @@ use std::fs::DirEntry;
 use std::path::{Path, PathBuf};
 
 mod image_operations;
+mod markdown_output;
 
 #[derive(Eq, PartialEq, Debug, Clone)]
 struct Section {
@@ -11,9 +12,26 @@ struct Section {
     image_files: Vec<PathBuf>,
 }
 
+#[derive(Eq, PartialEq, Debug, Clone)]
+struct OutputImageFiles {
+    small_image: String,
+    large_image: String,
+}
+
+#[derive(Eq, PartialEq, Debug, Clone)]
+struct SectionForOutput {
+    name: String,
+    image_files: Vec<OutputImageFiles>,
+}
+
 #[derive(Debug)]
 struct Minutes {
     sections: Vec<Section>,
+}
+
+#[derive(Debug)]
+struct MinutesForOutput {
+    sections: Vec<SectionForOutput>,
 }
 
 fn create_minutes(path: &Path) -> anyhow::Result<Minutes> {
