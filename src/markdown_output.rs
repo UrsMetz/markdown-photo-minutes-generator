@@ -26,7 +26,7 @@ mod tests {
     use speculoos::prelude::*;
 
     use crate::markdown_output::create_markdown;
-    use crate::{MinutesForOutput, OutputImageFiles, Section, SectionForOutput};
+    use crate::{MinutesForOutput, OutputImageFiles, SectionForOutput};
 
     #[test]
     fn creates_heading_for_each_section() {
