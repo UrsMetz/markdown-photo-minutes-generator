@@ -7,9 +7,12 @@ mod image_operations;
 mod markdown_output;
 
 #[derive(Eq, PartialEq, Debug, Clone)]
+struct ImagePath(PathBuf);
+
+#[derive(Eq, PartialEq, Debug, Clone)]
 struct Section {
     name: String,
-    image_files: Vec<PathBuf>,
+    image_files: Vec<ImagePath>,
 }
 
 #[derive(Eq, PartialEq, Debug, Clone)]
@@ -45,7 +48,7 @@ fn create_minutes(path: &Path) -> anyhow::Result<Minutes> {
 fn create_section(dir_entry: DirEntry) -> anyhow::Result<Section> {
     let dir = fs::read_dir(dir_entry.path())?;
     let image_files = dir
-        .map(|e| Ok(e?.path()))
+        .map(|e| Ok(ImagePath(e?.path())))
         .collect::<anyhow::Result<Vec<_>>>()?;
     Ok(Section {
         name: dir_entry.file_name().to_string_lossy().to_string(),
@@ -79,7 +82,7 @@ mod tests {
 
     use speculoos::prelude::*;
 
-    use crate::{create_dest_image_path, create_minutes, Section};
+    use crate::{create_dest_image_path, create_minutes, Section, ImagePath};
 
     #[test]
     fn minutes_from_non_existing_parent_dir_is_err() -> anyhow::Result<()> {
@@ -118,8 +121,8 @@ mod tests {
         let dir = tempfile::tempdir()?;
         let section_path = dir.path().join("abc");
         create_dir(&section_path)?;
-        let image_path = section_path.join("abc.jpg");
-        fs::File::create(&image_path)?;
+        let image_path = ImagePath(section_path.join("abc.jpg"));
+        fs::File::create(&image_path.0)?;
 
         let minutes = create_minutes(dir.path())?;
 
@@ -141,7 +144,7 @@ mod tests {
         let minutes = create_minutes(dir.path())?;
 
         let mut paths = minutes.sections.into_iter().flat_map(|s| s.image_files);
-        assert_that!(paths.all(|p| p.is_absolute())).is_true();
+        assert_that!(paths.all(|p| p.0.is_absolute())).is_true();
         Ok(())
     }
 
