@@ -1,13 +1,54 @@
-use anyhow::anyhow;
+use std::ffi::OsString;
 use std::fs;
 use std::fs::DirEntry;
 use std::path::{Path, PathBuf};
+
+use anyhow::{anyhow, Ok};
 
 mod image_operations;
 mod markdown_output;
 
 #[derive(Eq, PartialEq, Debug, Clone)]
 struct ImagePath(PathBuf);
+
+impl ImagePath {
+    fn small_image_path(&self, output_root: impl AsRef<Path>) -> anyhow::Result<PathBuf> {
+        Ok(output_root
+            .as_ref()
+            .join(self.create_output_file_name("small")?))
+    }
+
+    fn large_image_path(&self, output_root: impl AsRef<Path>) -> anyhow::Result<PathBuf> {
+        Ok(output_root
+            .as_ref()
+            .join(self.create_output_file_name("large")?))
+    }
+
+    fn create_output_file_name(&self, suffix: &str) -> anyhow::Result<PathBuf> {
+        let path = &self.0;
+        let path_str = path.to_string_lossy();
+
+        let parent_file_name = path
+            .parent()
+            .ok_or(anyhow!("path <{}> has no parent", path_str))?
+            .file_name()
+            .ok_or(anyhow!("cannot find direct parent for {}", path_str))?;
+
+        let mut stem: OsString = path
+            .file_stem()
+            .ok_or(anyhow!("path has no file stem {}", path_str))?
+            .into();
+        stem.push("_");
+        stem.push(suffix);
+        let extension = path
+            .extension()
+            .ok_or(anyhow!("path <{}> has no extension", path_str))?;
+
+        Ok(PathBuf::from(parent_file_name)
+            .join(stem)
+            .with_extension(extension))
+    }
+}
 
 #[derive(Eq, PartialEq, Debug, Clone)]
 struct Section {
@@ -79,10 +120,11 @@ mod tests {
     use std::fs;
     use std::fs::create_dir;
     use std::path::{Path, PathBuf};
+    use std::str::FromStr;
 
     use speculoos::prelude::*;
 
-    use crate::{create_dest_image_path, create_minutes, Section, ImagePath};
+    use crate::{create_dest_image_path, create_minutes, ImagePath, Section};
 
     #[test]
     fn minutes_from_non_existing_parent_dir_is_err() -> anyhow::Result<()> {
@@ -166,5 +208,21 @@ mod tests {
         assert_that!(dest_image_path)
             .is_err()
             .matches(|e| e.to_string().contains("source path must be absolute"));
+    }
+
+    #[test]
+    fn image_path_create_small_image_path() {
+        let image_path = ImagePath(PathBuf::from("/input/section-1/1.jpg"));
+
+        assert_that!(image_path.small_image_path(Path::new("/output")))
+            .is_ok_containing(PathBuf::from("/output/section-1/1_small.jpg"));
+    }
+
+    #[test]
+    fn image_path_create_large_image_path() {
+        let image_path = ImagePath(PathBuf::from("/input/section-1/1.jpg"));
+
+        assert_that!(image_path.large_image_path(Path::new("/output")))
+            .is_ok_containing(PathBuf::from("/output/section-1/1_large.jpg"));
     }
 }
