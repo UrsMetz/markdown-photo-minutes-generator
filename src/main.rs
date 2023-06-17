@@ -18,7 +18,8 @@ fn main() -> anyhow::Result<()> {
 
     let minutes = lib::create_minutes(options.input_root_path.as_path())?;
 
-    let for_output = lib::create_minutes_for_output(minutes, options.output_root_path.as_path())?;
+    let for_output =
+        lib::create_minutes_for_conversion(minutes, options.output_root_path.as_path())?;
 
     for_output
         .sections

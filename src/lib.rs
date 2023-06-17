@@ -123,7 +123,7 @@ fn create_section(dir_entry: fs_err::DirEntry) -> anyhow::Result<Section> {
     })
 }
 
-pub fn create_minutes_for_output(
+pub fn create_minutes_for_conversion(
     minutes: Minutes,
     output_base_path: &Path,
 ) -> anyhow::Result<MinutesForConversion> {
