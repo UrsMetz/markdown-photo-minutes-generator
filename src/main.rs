@@ -1,5 +1,5 @@
 use bpaf::{OptionParser, Parser};
-use markdown_photo_minutes_generator::MinutesForConversion;
+
 use std::path::PathBuf;
 
 #[derive(Clone, Debug)]
