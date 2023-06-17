@@ -16,10 +16,12 @@ fn save_as_resized_image<P: AsRef<Path>>(
     let new_width = calculate_new_dimension(ratio, source_width);
     let new_height = calculate_new_dimension(ratio, source_height);
     let dest_image = source_image.resize(new_width, new_height, FilterType::Gaussian);
+    let dest_image_path = dest_image_path.as_ref();
+    dest_image_path.parent().map(fs_err::create_dir_all);
     let mut dest_file = fs_err::OpenOptions::new()
         .write(true)
         .create_new(true)
-        .open(dest_image_path.as_ref())
+        .open(dest_image_path)
         .context("destination file exists")?;
     dest_image.write_to(&mut dest_file, image::ImageOutputFormat::Jpeg(100))?;
     dest_file.flush()?;
@@ -32,7 +34,7 @@ fn calculate_new_dimension(ratio: f32, source_width: u32) -> u32 {
 
 #[cfg(test)]
 mod tests {
-    use std::fs;
+    use fs_err;
     use std::path::Path;
 
     use speculoos::prelude::*;
@@ -44,11 +46,37 @@ mod tests {
         let dir = tempfile::tempdir()?;
         let section_path = dir.path().join("abc");
         let dest_path = dir.path().join("dest");
-        fs::create_dir(section_path)?;
+        fs_err::create_dir(section_path)?;
         let source_image_path = Path::new("./src/empty-100x200.jpg");
 
-        fs::create_dir(&dest_path)?;
+        fs_err::create_dir(&dest_path)?;
         let dest_image_path = dest_path.join("abc.dest.jpg");
+
+        save_as_resized_image(source_image_path, dest_image_path.as_path(), 0.5)?;
+
+        assert_that!(dest_image_path).exists();
+        let dynamic_image = image::io::Reader::open(dest_image_path)?.decode()?;
+        assert_that!(dynamic_image.width()).is_less_than_or_equal_to(72);
+        assert_that!(dynamic_image.width()).is_greater_than_or_equal_to(68);
+        assert_that!(dynamic_image.height()).is_less_than_or_equal_to(144);
+        assert_that!(dynamic_image.height()).is_greater_than_or_equal_to(140);
+
+        Ok(())
+    }
+
+    #[test]
+    fn creates_subdirectories_when_they_do_not_exist() -> anyhow::Result<()> {
+        let dir = tempfile::tempdir()?;
+        let section_path = dir.path().join("abc");
+        let dest_root_path = dir.path().join("dest");
+        fs_err::create_dir(section_path)?;
+        let source_image_path = Path::new("./src/empty-100x200.jpg");
+
+        fs_err::create_dir(&dest_root_path)?;
+        let dest_image_path = dest_root_path
+            .join("sub-dir")
+            .join("sub-sub-dir")
+            .join("abc.dest.jpg");
 
         save_as_resized_image(source_image_path, dest_image_path.as_path(), 0.5)?;
 
@@ -67,10 +95,10 @@ mod tests {
         let dir = tempfile::tempdir()?;
         let section_path = dir.path().join("abc");
         let dest_path = dir.path().join("dest");
-        fs::create_dir(section_path)?;
+        fs_err::create_dir(section_path)?;
         let source_image_path = Path::new("./src/does-not-exist.jpg");
 
-        fs::create_dir(&dest_path)?;
+        fs_err::create_dir(&dest_path)?;
         let dest_image_path = dest_path.join("abc.dest.jpg");
 
         let res = save_as_resized_image(source_image_path, dest_image_path.as_path(), 0.5);
@@ -85,12 +113,12 @@ mod tests {
         let dir = tempfile::tempdir()?;
         let section_path = dir.path().join("abc");
         let dest_path = dir.path().join("dest");
-        fs::create_dir(section_path)?;
+        fs_err::create_dir(section_path)?;
         let source_image_path = Path::new("./src/empty-100x200.jpg");
 
-        fs::create_dir(&dest_path)?;
+        fs_err::create_dir(&dest_path)?;
         let dest_image_path = dest_path.join("abc.dest.jpg");
-        fs::File::create(&dest_image_path)?;
+        fs_err::File::create(&dest_image_path)?;
 
         let res = save_as_resized_image(source_image_path, dest_image_path.as_path(), 0.5);
         let err_desc = assert_that!(res).is_err().subject.to_string();
