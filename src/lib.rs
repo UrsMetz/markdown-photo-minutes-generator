@@ -3,13 +3,17 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, Ok};
 
-mod image_operations;
+pub mod image_operations;
 mod markdown_output;
 
 #[derive(Eq, PartialEq, Debug, Clone)]
 struct ImagePath(PathBuf);
 
 impl ImagePath {
+    fn source_image_path(&self) -> Box<Path> {
+        Box::from(self.0.as_path())
+    }
+
     fn small_image_path(&self, output_root: impl AsRef<Path>) -> anyhow::Result<PathBuf> {
         Ok(output_root
             .as_ref()
@@ -55,9 +59,10 @@ struct Section {
 }
 
 #[derive(Eq, PartialEq, Debug, Clone)]
-struct OutputImageFilesForConversion {
-    small_image: PathBuf,
-    large_image: PathBuf,
+pub struct OutputImageFilesForConversion {
+    pub source_image_path: Box<Path>,
+    pub small_image: PathBuf,
+    pub large_image: PathBuf,
 }
 
 #[derive(Eq, PartialEq, Debug, Clone)]
@@ -79,13 +84,13 @@ struct SectionForOutput {
 }
 
 #[derive(Eq, PartialEq, Debug, Clone)]
-struct SectionForConversion {
-    name: String,
-    image_files: Vec<OutputImageFilesForConversion>,
+pub struct SectionForConversion {
+    pub name: String,
+    pub image_files: Vec<OutputImageFilesForConversion>,
 }
 
 #[derive(Debug)]
-struct Minutes {
+pub struct Minutes {
     sections: Vec<Section>,
 }
 
@@ -95,11 +100,11 @@ struct MinutesForOutput {
 }
 
 #[derive(Debug)]
-struct MinutesForConversion {
-    sections: Vec<SectionForConversion>,
+pub struct MinutesForConversion {
+    pub sections: Vec<SectionForConversion>,
 }
 
-fn create_minutes(path: &Path) -> anyhow::Result<Minutes> {
+pub fn create_minutes(path: &Path) -> anyhow::Result<Minutes> {
     let dir = fs_err::read_dir(path)?;
     let names = dir.map(|e| create_section(e?));
     Ok(Minutes {
@@ -118,9 +123,9 @@ fn create_section(dir_entry: fs_err::DirEntry) -> anyhow::Result<Section> {
     })
 }
 
-fn create_minutes_for_output(
+pub fn create_minutes_for_output(
     minutes: Minutes,
-    output_base_path: &String,
+    output_base_path: &Path,
 ) -> anyhow::Result<MinutesForConversion> {
     let sections: Vec<_> = minutes
         .sections
@@ -133,6 +138,7 @@ fn create_minutes_for_output(
                     .into_iter()
                     .map(|i| {
                         Ok(OutputImageFilesForConversion {
+                            source_image_path: i.source_image_path(),
                             large_image: i.large_image_path(output_base_path)?,
                             small_image: i.small_image_path(output_base_path)?,
                         })

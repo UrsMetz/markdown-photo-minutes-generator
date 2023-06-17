@@ -3,9 +3,9 @@ use image::imageops::FilterType;
 use std::io::Write;
 use std::path::Path;
 
-fn save_as_resized_image<P: AsRef<Path>>(
-    source_image_path: P,
-    dest_image_path: P,
+pub fn save_as_resized_image<S: AsRef<Path>, D: AsRef<Path>>(
+    source_image_path: S,
+    dest_image_path: D,
     ratio: f32,
 ) -> anyhow::Result<()> {
     let source_image = image::io::Reader::open(&source_image_path)
