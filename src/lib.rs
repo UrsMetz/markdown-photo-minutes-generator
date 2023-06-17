@@ -57,15 +57,33 @@ struct Section {
 }
 
 #[derive(Eq, PartialEq, Debug, Clone)]
+struct OutputImageFilesForConversion {
+    small_image: PathBuf,
+    large_image: PathBuf,
+}
+
+#[derive(Eq, PartialEq, Debug, Clone)]
 struct OutputImageFiles {
     small_image: String,
     large_image: String,
 }
 
 #[derive(Eq, PartialEq, Debug, Clone)]
+struct ConversionImageFiles {
+    small_image: PathBuf,
+    large_image: PathBuf,
+}
+
+#[derive(Eq, PartialEq, Debug, Clone)]
 struct SectionForOutput {
     name: String,
     image_files: Vec<OutputImageFiles>,
+}
+
+#[derive(Eq, PartialEq, Debug, Clone)]
+struct SectionForConversion {
+    name: String,
+    image_files: Vec<OutputImageFilesForConversion>,
 }
 
 #[derive(Debug)]
@@ -76,6 +94,11 @@ struct Minutes {
 #[derive(Debug)]
 struct MinutesForOutput {
     sections: Vec<SectionForOutput>,
+}
+
+#[derive(Debug)]
+struct MinutesForConversion {
+    sections: Vec<SectionForConversion>,
 }
 
 fn create_minutes(path: &Path) -> anyhow::Result<Minutes> {
@@ -95,6 +118,32 @@ fn create_section(dir_entry: DirEntry) -> anyhow::Result<Section> {
         name: dir_entry.file_name().to_string_lossy().to_string(),
         image_files,
     })
+}
+
+fn create_minutes_for_output(
+    minutes: Minutes,
+    output_base_path: &String,
+) -> anyhow::Result<MinutesForConversion> {
+    let sections: Vec<_> = minutes
+        .sections
+        .into_iter()
+        .map(|s| {
+            Ok(SectionForConversion {
+                name: s.name,
+                image_files: s
+                    .image_files
+                    .into_iter()
+                    .map(|i| {
+                        Ok(OutputImageFilesForConversion {
+                            large_image: i.large_image_path(output_base_path)?,
+                            small_image: i.small_image_path(output_base_path)?,
+                        })
+                    })
+                    .collect::<anyhow::Result<_>>()?,
+            })
+        })
+        .collect::<anyhow::Result<_>>()?;
+    Ok(MinutesForConversion { sections })
 }
 
 fn create_dest_image_path(
@@ -120,7 +169,6 @@ mod tests {
     use std::fs;
     use std::fs::create_dir;
     use std::path::{Path, PathBuf};
-    use std::str::FromStr;
 
     use speculoos::prelude::*;
 
