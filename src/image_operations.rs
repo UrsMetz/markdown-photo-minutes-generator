@@ -15,7 +15,7 @@ pub fn save_as_resized_image<S: AsRef<Path>, D: AsRef<Path>>(
     let source_height = source_image.height();
     let new_width = calculate_new_dimension(ratio, source_width);
     let new_height = calculate_new_dimension(ratio, source_height);
-    let dest_image = source_image.resize(new_width, new_height, FilterType::Gaussian);
+    let dest_image = source_image.resize(new_width, new_height, FilterType::Triangle);
     let dest_image_path = dest_image_path.as_ref();
     dest_image_path.parent().map(fs_err::create_dir_all);
     let mut dest_file = fs_err::OpenOptions::new()
@@ -23,7 +23,7 @@ pub fn save_as_resized_image<S: AsRef<Path>, D: AsRef<Path>>(
         .create_new(true)
         .open(dest_image_path)
         .context("destination file exists")?;
-    dest_image.write_to(&mut dest_file, image::ImageOutputFormat::Jpeg(100))?;
+    dest_image.write_to(&mut dest_file, image::ImageOutputFormat::Jpeg(80))?;
     dest_file.flush()?;
     Ok(())
 }
