@@ -1,6 +1,8 @@
+use std::path::PathBuf;
+
 use bpaf::{OptionParser, Parser};
 
-use std::path::PathBuf;
+use markdown_photo_minutes_generator as lib;
 
 #[derive(Clone, Debug)]
 struct ImageConversionOptions {
@@ -14,24 +16,16 @@ fn main() -> anyhow::Result<()> {
     println!("input: {}", options.input_root_path.to_string_lossy());
     println!("output: {}", options.output_root_path.to_string_lossy());
 
-    let minutes =
-        markdown_photo_minutes_generator::create_minutes(options.input_root_path.as_path())?;
+    let minutes = lib::create_minutes(options.input_root_path.as_path())?;
 
-    let for_output = markdown_photo_minutes_generator::create_minutes_for_output(
-        minutes,
-        options.output_root_path.as_path(),
-    )?;
+    let for_output = lib::create_minutes_for_output(minutes, options.output_root_path.as_path())?;
 
     for_output
         .sections
         .into_iter()
         .flat_map(|s| s.image_files)
         .try_for_each(|f| {
-            markdown_photo_minutes_generator::image_operations::save_as_resized_image(
-                f.source_image_path,
-                f.small_image,
-                0.4,
-            )
+            lib::image_operations::save_as_resized_image(f.source_image_path, f.small_image, 0.4)
         })?;
 
     // for f in for_output.sections.into_iter().flat_map(|s| s.image_files) {
