@@ -1,6 +1,4 @@
 use std::ffi::OsString;
-use std::fs;
-use std::fs::DirEntry;
 use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, Ok};
@@ -102,15 +100,15 @@ struct MinutesForConversion {
 }
 
 fn create_minutes(path: &Path) -> anyhow::Result<Minutes> {
-    let dir = fs::read_dir(path)?;
+    let dir = fs_err::read_dir(path)?;
     let names = dir.map(|e| create_section(e?));
     Ok(Minutes {
         sections: names.collect::<anyhow::Result<Vec<_>>>()?,
     })
 }
 
-fn create_section(dir_entry: DirEntry) -> anyhow::Result<Section> {
-    let dir = fs::read_dir(dir_entry.path())?;
+fn create_section(dir_entry: fs_err::DirEntry) -> anyhow::Result<Section> {
+    let dir = fs_err::read_dir(dir_entry.path())?;
     let image_files = dir
         .map(|e| Ok(ImagePath(e?.path())))
         .collect::<anyhow::Result<Vec<_>>>()?;
