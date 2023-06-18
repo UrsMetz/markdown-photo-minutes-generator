@@ -65,6 +65,15 @@ pub struct OutputImageFilesForConversion {
     pub large_image: PathBuf,
 }
 
+impl OutputImageFilesForConversion {
+    fn try_from_image_path(image_path: ImagePath, output_base_path: &Path) -> anyhow::Result<Self> {
+        Ok(Self {
+            source_image_path: image_path.source_image_path(),
+            large_image: image_path.large_image_path(output_base_path)?,
+            small_image: image_path.small_image_path(output_base_path)?,
+        })
+    }
+}
 #[derive(Eq, PartialEq, Debug, Clone)]
 struct OutputImageFiles {
     small_image: String,
@@ -87,6 +96,19 @@ struct SectionForOutput {
 pub struct SectionForConversion {
     pub name: String,
     pub image_files: Vec<OutputImageFilesForConversion>,
+}
+
+impl SectionForConversion {
+    fn try_from_section(section: Section, output_base_path: &Path) -> anyhow::Result<Self> {
+        Ok(SectionForConversion {
+            name: section.name,
+            image_files: section
+                .image_files
+                .into_iter()
+                .map(|i| OutputImageFilesForConversion::try_from_image_path(i, output_base_path))
+                .collect::<anyhow::Result<_>>()?,
+        })
+    }
 }
 
 #[derive(Debug)]
@@ -130,22 +152,7 @@ pub fn create_minutes_for_conversion(
     let sections: Vec<_> = minutes
         .sections
         .into_iter()
-        .map(|s| {
-            Ok(SectionForConversion {
-                name: s.name,
-                image_files: s
-                    .image_files
-                    .into_iter()
-                    .map(|i| {
-                        Ok(OutputImageFilesForConversion {
-                            source_image_path: i.source_image_path(),
-                            large_image: i.large_image_path(output_base_path)?,
-                            small_image: i.small_image_path(output_base_path)?,
-                        })
-                    })
-                    .collect::<anyhow::Result<_>>()?,
-            })
-        })
+        .map(|s| SectionForConversion::try_from_section(s, output_base_path))
         .collect::<anyhow::Result<_>>()?;
     Ok(MinutesForConversion { sections })
 }
