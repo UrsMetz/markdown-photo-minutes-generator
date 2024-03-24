@@ -1,10 +1,10 @@
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
-use anyhow::{anyhow, Ok};
+use anyhow::{anyhow, Context, Ok};
 
 pub mod image_operations;
-mod markdown_output;
+pub mod markdown_output;
 
 #[derive(Eq, PartialEq, Debug, Clone)]
 struct ImagePath(PathBuf);
@@ -75,9 +75,44 @@ impl OutputImageFilesForConversion {
     }
 }
 #[derive(Eq, PartialEq, Debug, Clone)]
-struct OutputImageFiles {
-    small_image: String,
-    large_image: String,
+pub struct OutputImageFiles {
+    pub small_image: String,
+    pub large_image: String,
+}
+
+impl OutputImageFiles {
+    pub fn create(
+        source: &OutputImageFilesForConversion,
+        online_base_path: impl AsRef<str>,
+    ) -> anyhow::Result<Self> {
+        Ok(Self {
+            small_image: Self::create_online_path(&source.small_image, online_base_path.as_ref())?,
+            large_image: Self::create_online_path(&source.large_image, online_base_path.as_ref())?,
+        })
+    }
+
+    fn create_online_path(
+        image_path: impl AsRef<Path>,
+        online_base_path: &str,
+    ) -> anyhow::Result<String> {
+        let image_path = image_path.as_ref();
+        let base_path = image_path
+            .parent()
+            .and_then(Path::parent)
+            .with_context(|| {
+                format!(
+                    "Could not derive base path of image {}",
+                    image_path.to_string_lossy()
+                )
+            })?;
+
+        let image_online_path = image_path.strip_prefix(base_path)?;
+        Ok(format!(
+            "{}/{}",
+            online_base_path,
+            image_online_path.to_string_lossy()
+        ))
+    }
 }
 
 #[derive(Eq, PartialEq, Debug, Clone)]
@@ -87,9 +122,9 @@ struct ConversionImageFiles {
 }
 
 #[derive(Eq, PartialEq, Debug, Clone)]
-struct SectionForOutput {
-    name: String,
-    image_files: Vec<OutputImageFiles>,
+pub struct SectionForOutput {
+    pub name: String,
+    pub image_files: Vec<OutputImageFiles>,
 }
 
 #[derive(Eq, PartialEq, Debug, Clone)]
@@ -117,8 +152,8 @@ pub struct Minutes {
 }
 
 #[derive(Debug)]
-struct MinutesForOutput {
-    sections: Vec<SectionForOutput>,
+pub struct MinutesForOutput {
+    pub sections: Vec<SectionForOutput>,
 }
 
 #[derive(Debug)]
@@ -183,7 +218,10 @@ mod tests {
 
     use speculoos::prelude::*;
 
-    use crate::{create_dest_image_path, create_minutes, ImagePath, Section};
+    use crate::{
+        create_dest_image_path, create_minutes, ImagePath, OutputImageFiles,
+        OutputImageFilesForConversion, Section,
+    };
 
     #[test]
     fn minutes_from_non_existing_parent_dir_is_err() -> anyhow::Result<()> {
@@ -283,5 +321,21 @@ mod tests {
 
         assert_that!(image_path.large_image_path(Path::new("/output")))
             .is_ok_containing(PathBuf::from("/output/section-1/1_large.jpg"));
+    }
+
+    #[test]
+    fn create_output_images() {
+        let source = OutputImageFilesForConversion {
+            large_image: PathBuf::from("/home/images/a/large_file"),
+            small_image: PathBuf::from("/home/images/a/small_file"),
+            source_image_path: Path::new("/home/images/source/file").into(),
+        };
+        let online_base_path = "http://localhost/documents";
+        let files = OutputImageFiles::create(&source, online_base_path).unwrap();
+
+        assert_that!(files.small_image)
+            .is_equal_to("http://localhost/documents/a/small_file".to_string());
+        assert_that!(files.large_image)
+            .is_equal_to("http://localhost/documents/a/large_file".to_string());
     }
 }
