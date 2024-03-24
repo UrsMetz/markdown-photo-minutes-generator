@@ -23,7 +23,7 @@ pub fn save_as_resized_image<S: AsRef<Path>, D: AsRef<Path>>(
         .create_new(true)
         .open(dest_image_path)
         .context("destination file exists")?;
-    dest_image.write_to(&mut dest_file, image::ImageOutputFormat::Jpeg(80))?;
+    dest_image.write_to(&mut dest_file, image::ImageFormat::Jpeg)?;
     dest_file.flush()?;
     Ok(())
 }

@@ -5,9 +5,9 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.71"
-bpaf = "0.8.1"
+bpaf = "0.9"
 fs-err = "2.9.0"
-image = { version = "0.24.6", default-features = false, features = ["jpeg"] }
+image = { version = "0.25", default-features = false, features = ["jpeg"] }
 
 [dev-dependencies]
 speculoos = { version = "0.11.0", default-features = false }
