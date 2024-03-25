@@ -1,7 +1,10 @@
-use anyhow::Context;
-use image::imageops::FilterType;
 use std::io::Write;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+
+use anyhow::Context;
+use exif::{In, Tag};
+use image::imageops::FilterType;
+use image::{imageops, DynamicImage};
 
 pub fn save_as_resized_image<S: AsRef<Path>, D: AsRef<Path>>(
     source_image_path: S,
@@ -16,6 +19,10 @@ pub fn save_as_resized_image<S: AsRef<Path>, D: AsRef<Path>>(
     let new_width = calculate_new_dimension(ratio, source_width);
     let new_height = calculate_new_dimension(ratio, source_height);
     let dest_image = source_image.resize(new_width, new_height, FilterType::Triangle);
+    let dest_image = rotate(
+        dest_image,
+        get_jpeg_orientation(PathBuf::from(source_image_path.as_ref()))?,
+    );
     let dest_image_path = dest_image_path.as_ref();
     dest_image_path.parent().map(fs_err::create_dir_all);
     let mut dest_file = fs_err::OpenOptions::new()
@@ -32,11 +39,50 @@ fn calculate_new_dimension(ratio: f32, source_width: u32) -> u32 {
     (ratio.sqrt() * source_width as f32) as u32
 }
 
+fn rotate(mut img: DynamicImage, orientation: u8) -> DynamicImage {
+    let rgba = img.color().has_alpha();
+    img = match orientation {
+        2 => DynamicImage::ImageRgba8(imageops::flip_horizontal(&img)),
+        3 => DynamicImage::ImageRgba8(imageops::rotate180(&img)),
+        4 => DynamicImage::ImageRgba8(imageops::flip_vertical(&img)),
+        5 => DynamicImage::ImageRgba8(imageops::flip_horizontal(&imageops::rotate90(&img))),
+        6 => DynamicImage::ImageRgba8(imageops::rotate90(&img)),
+        7 => DynamicImage::ImageRgba8(imageops::flip_horizontal(&imageops::rotate270(&img))),
+        8 => DynamicImage::ImageRgba8(imageops::rotate270(&img)),
+        _ => img,
+    };
+    if !rgba {
+        img = DynamicImage::ImageRgb8(img.into_rgb8());
+    }
+    img
+}
+fn get_jpeg_orientation(file_path: PathBuf) -> anyhow::Result<u8> {
+    let file = std::fs::File::open(file_path).context("problem opening the file")?;
+    let mut bufreader = std::io::BufReader::new(&file);
+    let exifreader = exif::Reader::new();
+    let exif = exifreader.read_from_container(&mut bufreader);
+
+    match exif {
+        Ok(exif) => {
+            let orientation: u8 = match exif.get_field(Tag::Orientation, In::PRIMARY) {
+                Some(orientation) => match orientation.value.get_uint(0) {
+                    Some(v @ 1..=8) => v as u8,
+                    _ => 1,
+                },
+                None => 1,
+            };
+
+            Ok(orientation)
+        }
+        Err(_) => Ok(0),
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use fs_err;
     use std::path::Path;
 
+    use fs_err;
     use speculoos::prelude::*;
 
     use crate::image_operations::save_as_resized_image;
