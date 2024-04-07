@@ -4,12 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-anyhow = "1.0.71"
+anyhow = "1"
 bpaf = "0.9"
-fs-err = "2.9.0"
+fs-err = "2"
 image = { version = "0.25", default-features = false, features = ["jpeg"] }
-kamadak-exif = "0.5.5"
+kamadak-exif = "0.5"
 
 [dev-dependencies]
-speculoos = { version = "0.11.0", default-features = false }
-tempfile = "3.5.0"
+speculoos = { version = "0.11", default-features = false }
+tempfile = "3"
