@@ -44,7 +44,7 @@ fn main() -> anyhow::Result<()> {
             })?;
     }
 
-    let for_output = into_mintues_for_outputs(for_conversion, options.online_base_path)?;
+    let for_output = into_minutes_for_outputs(for_conversion, options.online_base_path)?;
 
     let markdown = markdown_output::create_markdown(for_output)?;
 
@@ -53,7 +53,7 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn into_mintues_for_outputs(
+fn into_minutes_for_outputs(
     for_conversion: lib::MinutesForConversion,
     online_base_path: String,
 ) -> anyhow::Result<MinutesForOutput> {
