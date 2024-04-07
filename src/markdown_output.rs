@@ -16,7 +16,7 @@ fn format_section(s: SectionForOutput) -> String {
         .image_files
         .into_iter()
         .map(|f| (f.small_image, f.large_image))
-        .map(|image_paths| format!("![{}]({})", image_paths.0, image_paths.1))
+        .map(|image_paths| format!("[![{}]({})]({})", s.name, image_paths.0, image_paths.1))
         .reduce(|acc, cur| format!("{}\n\n{}", acc, cur))
         .unwrap_or("\n".to_string());
     format!("# {}\n\n{}", s.name, images)
@@ -42,7 +42,7 @@ mod tests {
                     image_files: vec![],
                 },
             ],
-                    };
+        };
 
         let markdown = assert_that!(create_markdown(minutes))
             .is_ok()
@@ -101,13 +101,17 @@ mod tests {
             .to_string();
 
         assert_that!(markdown).is_equal_to(format!(
-            "# section 1\n\n![{}]({})\n\n![{}]({})\n\n# section 2\n\n![{}]({})\n\n![{}]({})",
+            "# section 1\n\n[![{}]({})]({})\n\n[![{}]({})]({})\n\n# section 2\n\n[![{}]({})]({})\n\n[![{}]({})]({})",
+            "section 1",
             image_path_1_small,
             image_path_1_large,
+            "section 1",
             image_path_2_small,
             image_path_2_large,
+            "section 2",
             image_path_3_small,
             image_path_3_large,
+            "section 2",
             image_path_4_small,
             image_path_4_large
         ));
