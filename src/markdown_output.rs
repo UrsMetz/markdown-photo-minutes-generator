@@ -1,4 +1,4 @@
-use crate::{MinutesForOutput, SectionForOutput};
+use crate::output::{MinutesForOutput, SectionForOutput};
 
 pub fn create_markdown(minutes: MinutesForOutput) -> anyhow::Result<String> {
     let sections = minutes
@@ -27,7 +27,8 @@ mod tests {
     use speculoos::prelude::*;
 
     use crate::markdown_output::create_markdown;
-    use crate::{MinutesForOutput, OutputImageFiles, SectionForOutput};
+    use crate::output::{MinutesForOutput, SectionForOutput};
+    use crate::OutputImageFiles;
 
     #[test]
     fn creates_heading_for_each_section() {

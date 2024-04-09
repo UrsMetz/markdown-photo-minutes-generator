@@ -2,9 +2,11 @@ use std::path::PathBuf;
 
 use bpaf::{OptionParser, Parser};
 
-use lib::{MinutesForOutput, OutputImageFiles, SectionForOutput};
+use lib::OutputImageFiles;
 use markdown_photo_minutes_generator as lib;
-use markdown_photo_minutes_generator::{markdown_output, Minutes};
+use markdown_photo_minutes_generator::input::Minutes;
+use markdown_photo_minutes_generator::markdown_output;
+use markdown_photo_minutes_generator::output::{MinutesForOutput, SectionForOutput};
 
 #[derive(Clone, Debug)]
 struct ImageConversionOptions {
@@ -23,7 +25,10 @@ fn main() -> anyhow::Result<()> {
     let minutes = Minutes::try_from(options.input_root_path.as_path())?;
 
     let for_conversion =
-        lib::create_minutes_for_conversion(minutes, options.output_root_path.as_path())?;
+        markdown_photo_minutes_generator::conversion::create_minutes_for_conversion(
+            minutes,
+            options.output_root_path.as_path(),
+        )?;
 
     if !options.skip_image_conversion {
         let vec = for_conversion.sections.clone();
@@ -54,7 +59,7 @@ fn main() -> anyhow::Result<()> {
 }
 
 fn into_minutes_for_outputs(
-    for_conversion: lib::MinutesForConversion,
+    for_conversion: markdown_photo_minutes_generator::conversion::MinutesForConversion,
     online_base_path: String,
 ) -> anyhow::Result<MinutesForOutput> {
     Ok(MinutesForOutput {
