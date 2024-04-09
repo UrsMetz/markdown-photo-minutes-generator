@@ -4,7 +4,7 @@ use bpaf::{OptionParser, Parser};
 
 use lib::{MinutesForOutput, OutputImageFiles, SectionForOutput};
 use markdown_photo_minutes_generator as lib;
-use markdown_photo_minutes_generator::markdown_output;
+use markdown_photo_minutes_generator::{markdown_output, Minutes};
 
 #[derive(Clone, Debug)]
 struct ImageConversionOptions {
@@ -20,7 +20,7 @@ fn main() -> anyhow::Result<()> {
     println!("input: {}", options.input_root_path.to_string_lossy());
     println!("output: {}", options.output_root_path.to_string_lossy());
 
-    let minutes = lib::create_minutes(options.input_root_path.as_path())?;
+    let minutes = Minutes::try_from(options.input_root_path.as_path())?;
 
     let for_conversion =
         lib::create_minutes_for_conversion(minutes, options.output_root_path.as_path())?;

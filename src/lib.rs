@@ -151,6 +151,18 @@ pub struct Minutes {
     sections: Vec<Section>,
 }
 
+impl TryFrom<&Path> for Minutes {
+    type Error = anyhow::Error;
+
+    fn try_from(value: &Path) -> Result<Self, Self::Error> {
+        let dir = fs_err::read_dir(value)?;
+        let names = dir.map(|e| create_section(e?));
+        Ok(Self {
+            sections: names.collect::<anyhow::Result<Vec<_>>>()?,
+        })
+    }
+}
+
 #[derive(Debug)]
 pub struct MinutesForOutput {
     pub sections: Vec<SectionForOutput>,
@@ -159,14 +171,6 @@ pub struct MinutesForOutput {
 #[derive(Debug)]
 pub struct MinutesForConversion {
     pub sections: Vec<SectionForConversion>,
-}
-
-pub fn create_minutes(path: &Path) -> anyhow::Result<Minutes> {
-    let dir = fs_err::read_dir(path)?;
-    let names = dir.map(|e| create_section(e?));
-    Ok(Minutes {
-        sections: names.collect::<anyhow::Result<Vec<_>>>()?,
-    })
 }
 
 fn create_section(dir_entry: fs_err::DirEntry) -> anyhow::Result<Section> {
@@ -200,15 +204,15 @@ mod tests {
 
     use speculoos::prelude::*;
 
-    use crate::{
-        create_minutes, ImagePath, OutputImageFiles, OutputImageFilesForConversion, Section,
-    };
+    use crate::{ImagePath, Minutes, OutputImageFiles, OutputImageFilesForConversion, Section};
 
     #[test]
     fn minutes_from_non_existing_parent_dir_is_err() -> anyhow::Result<()> {
         let dir = tempfile::tempdir()?;
 
-        assert_that!(create_minutes(&dir.path().join("does_not_exist"))).is_err();
+        let non_existing_path = dir.path().join("does_not_exist");
+        let result = Minutes::try_from(non_existing_path.as_path());
+        assert_that!(result).is_err();
         Ok(())
     }
 
@@ -216,7 +220,7 @@ mod tests {
     fn minutes_from_no_session_directory() -> anyhow::Result<()> {
         let dir = tempfile::tempdir()?;
 
-        let minutes = create_minutes(dir.path())?;
+        let minutes = Minutes::try_from(dir.path())?;
 
         assert_that!(minutes.sections).is_empty();
         Ok(())
@@ -227,7 +231,8 @@ mod tests {
         let dir = tempfile::tempdir()?;
         create_dir(dir.path().join("abc"))?;
 
-        let minutes = create_minutes(dir.path())?;
+        let path = dir.path();
+        let minutes = Minutes::try_from(path)?;
 
         assert_that!(minutes.sections).contains_all_of(&vec![&Section {
             name: "abc".to_string(),
@@ -244,7 +249,8 @@ mod tests {
         let image_path = ImagePath(section_path.join("abc.jpg"));
         fs::File::create(&image_path.0)?;
 
-        let minutes = create_minutes(dir.path())?;
+        let path = dir.path();
+        let minutes = Minutes::try_from(path)?;
 
         assert_that!(minutes.sections).contains_all_of(&vec![&Section {
             name: "abc".to_string(),
@@ -261,7 +267,7 @@ mod tests {
         let image_path = section_path.join("abc.jpg");
         fs::File::create(image_path)?;
 
-        let minutes = create_minutes(dir.path())?;
+        let minutes = Minutes::try_from(dir.path())?;
 
         let mut paths = minutes.sections.into_iter().flat_map(|s| s.image_files);
         assert_that!(paths.all(|p| p.0.is_absolute())).is_true();
