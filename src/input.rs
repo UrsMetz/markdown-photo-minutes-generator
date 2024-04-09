@@ -1,5 +1,7 @@
 use std::path::Path;
 
+use fs_err;
+
 use crate::ImagePath;
 
 #[derive(Debug)]
@@ -7,24 +9,12 @@ pub struct Minutes {
     pub sections: Vec<Section>,
 }
 
-impl Minutes {
-    fn create_section(dir_entry: fs_err::DirEntry) -> anyhow::Result<Section> {
-        let dir = fs_err::read_dir(dir_entry.path())?;
-        let image_files = dir
-            .map(|e| anyhow::Ok(ImagePath(e?.path())))
-            .collect::<anyhow::Result<Vec<_>>>()?;
-        anyhow::Ok(Section {
-            name: dir_entry.file_name().to_string_lossy().to_string(),
-            image_files,
-        })
-    }
-}
 impl TryFrom<&Path> for Minutes {
     type Error = anyhow::Error;
 
     fn try_from(value: &Path) -> Result<Self, Self::Error> {
         let dir = fs_err::read_dir(value)?;
-        let names = dir.map(|e| Self::create_section(e?));
+        let names = dir.map(|e| Section::try_from(e?));
         anyhow::Ok(Self {
             sections: names.collect::<anyhow::Result<Vec<_>>>()?,
         })
@@ -35,6 +25,21 @@ impl TryFrom<&Path> for Minutes {
 pub struct Section {
     pub name: String,
     pub image_files: Vec<ImagePath>,
+}
+
+impl TryFrom<fs_err::DirEntry> for Section {
+    type Error = anyhow::Error;
+
+    fn try_from(value: fs_err::DirEntry) -> Result<Self, Self::Error> {
+        let dir = fs_err::read_dir(value.path())?;
+        let image_files = dir
+            .map(|e| anyhow::Ok(ImagePath(e?.path())))
+            .collect::<anyhow::Result<Vec<_>>>()?;
+        anyhow::Ok(Section {
+            name: value.file_name().to_string_lossy().to_string(),
+            image_files,
+        })
+    }
 }
 
 #[cfg(test)]
