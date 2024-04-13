@@ -1,7 +1,7 @@
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
-use anyhow::anyhow;
+use anyhow::Context;
 
 #[derive(Eq, PartialEq, Debug, Clone)]
 pub struct ImagePath(PathBuf);
@@ -37,19 +37,19 @@ impl ImagePath {
 
         let parent_file_name = path
             .parent()
-            .ok_or(anyhow!("path <{}> has no parent", path_str))?
+            .with_context(|| format!("path <{}> has no parent", path_str))?
             .file_name()
-            .ok_or(anyhow!("cannot find direct parent for {}", path_str))?;
+            .with_context(|| format!("cannot find direct parent for {}", path_str))?;
 
         let mut stem: OsString = path
             .file_stem()
-            .ok_or(anyhow!("path has no file stem {}", path_str))?
+            .with_context(|| format!("path has no file stem {}", path_str))?
             .into();
         stem.push("_");
         stem.push(suffix);
         let extension = path
             .extension()
-            .ok_or(anyhow!("path <{}> has no extension", path_str))?;
+            .with_context(|| format!("path <{}> has no extension", path_str))?;
 
         anyhow::Ok(
             PathBuf::from(parent_file_name)
@@ -76,10 +76,28 @@ mod tests {
     }
 
     #[test]
+    fn image_path_create_small_image_path_fails_when_file_has_root_as_parent() {
+        let image_path = ImagePath::new(PathBuf::from("/1.jpg"));
+
+        let result = image_path.small_image_path(Path::new("/output"));
+        let err = assert_that!(result).is_err().subject;
+        assert_that!(err.to_string()).contains("direct parent for /1.jpg");
+    }
+
+    #[test]
     fn image_path_create_large_image_path() {
         let image_path = ImagePath::new(PathBuf::from("/input/section-1/1.jpg"));
 
         assert_that!(image_path.large_image_path(Path::new("/output")))
             .is_ok_containing(PathBuf::from("/output/section-1/1_large.jpg"));
+    }
+
+    #[test]
+    fn image_path_create_large_image_path_fails_when_file_has_root_as_parent() {
+        let image_path = ImagePath::new(PathBuf::from("/1.jpg"));
+
+        let result = image_path.large_image_path(Path::new("/output"));
+        let err = assert_that!(result).is_err().subject;
+        assert_that!(err.to_string()).contains("direct parent for /1.jpg");
     }
 }
