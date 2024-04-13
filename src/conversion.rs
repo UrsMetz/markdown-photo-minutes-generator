@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
+use crate::images::ImagePath;
 use crate::input::{Minutes, Section};
-use crate::ImagePath;
 
 #[derive(Eq, PartialEq, Debug, Clone)]
 pub struct OutputImageFilesForConversion {
