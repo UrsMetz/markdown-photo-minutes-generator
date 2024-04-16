@@ -2,7 +2,7 @@ use std::path::Path;
 
 use fs_err;
 
-use crate::images::ImagePath;
+use crate::images::SourceImagePath;
 
 #[derive(Debug)]
 pub struct Minutes {
@@ -24,7 +24,7 @@ impl TryFrom<&Path> for Minutes {
 #[derive(Eq, PartialEq, Debug, Clone)]
 pub struct Section {
     pub name: String,
-    pub image_files: Vec<ImagePath>,
+    pub image_files: Vec<SourceImagePath>,
 }
 
 impl TryFrom<fs_err::DirEntry> for Section {
@@ -33,7 +33,7 @@ impl TryFrom<fs_err::DirEntry> for Section {
     fn try_from(value: fs_err::DirEntry) -> Result<Self, Self::Error> {
         let dir = fs_err::read_dir(value.path())?;
         let image_files = dir
-            .map(|e| anyhow::Ok(ImagePath::new(e?.path())))
+            .map(|e| anyhow::Ok(SourceImagePath::new(e?.path())))
             .collect::<anyhow::Result<Vec<_>>>()?;
         anyhow::Ok(Section {
             name: value.file_name().to_string_lossy().to_string(),
@@ -49,7 +49,7 @@ mod tests {
 
     use speculoos::prelude::*;
 
-    use crate::images::ImagePath;
+    use crate::images::SourceImagePath;
     use crate::input::{Minutes, Section};
 
     #[test]
@@ -92,8 +92,8 @@ mod tests {
         let dir = tempfile::tempdir()?;
         let section_path = dir.path().join("abc");
         create_dir(&section_path)?;
-        let image_path = ImagePath::new(section_path.join("abc.jpg"));
-        fs::File::create(image_path.source_image_path())?;
+        let image_path = SourceImagePath::new(section_path.join("abc.jpg"));
+        fs::File::create(image_path.path())?;
 
         let path = dir.path();
         let minutes = Minutes::try_from(path)?;
@@ -116,7 +116,7 @@ mod tests {
         let minutes = Minutes::try_from(dir.path())?;
 
         let mut paths = minutes.sections.into_iter().flat_map(|s| s.image_files);
-        assert_that!(paths.all(|p| p.source_image_path().is_absolute())).is_true();
+        assert_that!(paths.all(|p| p.path().is_absolute())).is_true();
         Ok(())
     }
 }

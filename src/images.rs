@@ -4,14 +4,14 @@ use std::path::{Path, PathBuf};
 use anyhow::Context;
 
 #[derive(Eq, PartialEq, Debug, Clone)]
-pub struct ImagePath(PathBuf);
+pub struct SourceImagePath(PathBuf);
 
-impl ImagePath {
+impl SourceImagePath {
     pub fn new(path_buf: PathBuf) -> Self {
         Self(path_buf)
     }
 
-    pub fn source_image_path(&self) -> Box<Path> {
+    pub fn path(&self) -> Box<Path> {
         Box::from(self.0.as_path())
     }
 
@@ -65,19 +65,19 @@ mod tests {
 
     use speculoos::prelude::*;
 
-    use crate::images::ImagePath;
+    use crate::images::SourceImagePath;
 
     #[test]
-    fn image_path_create_small_image_path() {
-        let image_path = ImagePath::new(PathBuf::from("/input/section-1/1.jpg"));
+    fn create_small_image_path() {
+        let image_path = SourceImagePath::new(PathBuf::from("/input/section-1/1.jpg"));
 
         assert_that!(image_path.small_image_path(Path::new("/output")))
             .is_ok_containing(PathBuf::from("/output/section-1/1_small.jpg"));
     }
 
     #[test]
-    fn image_path_create_small_image_path_fails_when_file_has_root_as_parent() {
-        let image_path = ImagePath::new(PathBuf::from("/1.jpg"));
+    fn create_small_image_path_fails_when_file_has_root_as_parent() {
+        let image_path = SourceImagePath::new(PathBuf::from("/1.jpg"));
 
         let result = image_path.small_image_path(Path::new("/output"));
         let err = assert_that!(result).is_err().subject;
@@ -85,16 +85,16 @@ mod tests {
     }
 
     #[test]
-    fn image_path_create_large_image_path() {
-        let image_path = ImagePath::new(PathBuf::from("/input/section-1/1.jpg"));
+    fn create_large_image_path() {
+        let image_path = SourceImagePath::new(PathBuf::from("/input/section-1/1.jpg"));
 
         assert_that!(image_path.large_image_path(Path::new("/output")))
             .is_ok_containing(PathBuf::from("/output/section-1/1_large.jpg"));
     }
 
     #[test]
-    fn image_path_create_large_image_path_fails_when_file_has_root_as_parent() {
-        let image_path = ImagePath::new(PathBuf::from("/1.jpg"));
+    fn create_large_image_path_fails_when_file_has_root_as_parent() {
+        let image_path = SourceImagePath::new(PathBuf::from("/1.jpg"));
 
         let result = image_path.large_image_path(Path::new("/output"));
         let err = assert_that!(result).is_err().subject;

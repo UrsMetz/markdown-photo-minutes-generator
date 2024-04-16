@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use crate::images::ImagePath;
+use crate::images::SourceImagePath;
 use crate::input::{Minutes, Section};
 
 #[derive(Eq, PartialEq, Debug, Clone)]
@@ -11,11 +11,14 @@ pub struct OutputImageFilesForConversion {
 }
 
 impl OutputImageFilesForConversion {
-    fn try_from_image_path(image_path: ImagePath, output_base_path: &Path) -> anyhow::Result<Self> {
+    fn try_from_image_path(
+        source_image_path: SourceImagePath,
+        output_base_path: &Path,
+    ) -> anyhow::Result<Self> {
         anyhow::Ok(Self {
-            source_image_path: image_path.source_image_path(),
-            large_image: image_path.large_image_path(output_base_path)?,
-            small_image: image_path.small_image_path(output_base_path)?,
+            source_image_path: source_image_path.path(),
+            large_image: source_image_path.large_image_path(output_base_path)?,
+            small_image: source_image_path.small_image_path(output_base_path)?,
         })
     }
 }
