@@ -41,12 +41,12 @@ impl OutputImageFiles {
 }
 
 #[derive(Eq, PartialEq, Debug, Clone)]
-pub struct SectionForOutput {
-    pub name: String,
+pub struct SectionForOutput<'source> {
+    pub name: &'source str,
     pub image_files: Vec<OutputImageFiles>,
 }
 
 #[derive(Debug)]
-pub struct MinutesForOutput {
-    pub sections: Vec<SectionForOutput>,
+pub struct MinutesForOutput<'source> {
+    pub sections: Vec<SectionForOutput<'source>>,
 }

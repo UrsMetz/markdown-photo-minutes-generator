@@ -35,11 +35,11 @@ mod tests {
         let minutes = MinutesForOutput {
             sections: vec![
                 SectionForOutput {
-                    name: "section 1".to_string(),
+                    name: "section 1",
                     image_files: vec![],
                 },
                 SectionForOutput {
-                    name: "section 2".to_string(),
+                    name: "section 2",
                     image_files: vec![],
                 },
             ],
@@ -68,7 +68,7 @@ mod tests {
         let minutes = MinutesForOutput {
             sections: vec![
                 SectionForOutput {
-                    name: "section 1".to_string(),
+                    name: "section 1",
                     image_files: vec![
                         OutputImageFiles {
                             small_image: image_path_1_small.clone(),
@@ -81,7 +81,7 @@ mod tests {
                     ],
                 },
                 SectionForOutput {
-                    name: "section 2".to_string(),
+                    name: "section 2",
                     image_files: vec![
                         OutputImageFiles {
                             small_image: image_path_3_small.clone(),

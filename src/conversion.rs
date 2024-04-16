@@ -31,7 +31,7 @@ struct ConversionImageFiles {
 
 #[derive(Eq, PartialEq, Debug, Clone)]
 pub struct SectionForConversion<'source> {
-    pub name: String,
+    pub name: &'source str,
     pub image_files: Vec<OutputImageFilesForConversion<'source>>,
 }
 
@@ -41,7 +41,7 @@ impl<'source> SectionForConversion<'source> {
         output_base_path: &Path,
     ) -> anyhow::Result<Self> {
         anyhow::Ok(SectionForConversion {
-            name: section.name.clone(),
+            name: section.name.as_ref(),
             image_files: section
                 .image_files
                 .iter()

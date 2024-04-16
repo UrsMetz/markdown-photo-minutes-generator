@@ -49,7 +49,7 @@ fn main() -> anyhow::Result<()> {
             })?;
     }
 
-    let for_output = into_minutes_for_outputs(for_conversion, options.online_base_path)?;
+    let for_output = into_minutes_for_outputs(&for_conversion, options.online_base_path)?;
 
     let markdown = markdown_output::create_markdown(for_output)?;
 
@@ -58,10 +58,10 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn into_minutes_for_outputs(
-    for_conversion: markdown_photo_minutes_generator::conversion::MinutesForConversion,
+fn into_minutes_for_outputs<'source>(
+    for_conversion: &'source markdown_photo_minutes_generator::conversion::MinutesForConversion,
     online_base_path: String,
-) -> anyhow::Result<MinutesForOutput> {
+) -> anyhow::Result<MinutesForOutput<'source>> {
     Ok(MinutesForOutput {
         sections: for_conversion
             .sections
@@ -73,7 +73,7 @@ fn into_minutes_for_outputs(
                     .map(|f| OutputImageFiles::create(f, &online_base_path))
                     .collect::<anyhow::Result<_>>()?;
                 Ok(SectionForOutput {
-                    name: s.name.clone(),
+                    name: s.name,
                     image_files,
                 })
             })
