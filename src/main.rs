@@ -91,10 +91,10 @@ mod cmdparams {
             .fallback(false);
 
         bpaf::construct!(ImageConversionOptions {
+            skip_image_conversion,
             input_root_path,
             output_root_path,
             online_base_path,
-            skip_image_conversion,
         })
         .to_options()
     }
@@ -115,6 +115,11 @@ mod cmdparams {
             assert_that!(opts.output_root_path).is_equal_to(PathBuf::from("/b"));
             assert_that!(opts.skip_image_conversion).is_equal_to(false);
             assert_that!(opts.online_base_path).is_equal_to("http://localhost/output".to_string());
+        }
+
+        #[test]
+        fn options_invariants_are_fulfilled() {
+            options().check_invariants(true);
         }
     }
 }
