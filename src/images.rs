@@ -11,8 +11,8 @@ impl SourceImagePath {
         Self(path_buf)
     }
 
-    pub fn path(&self) -> Box<Path> {
-        Box::from(self.0.as_path())
+    pub fn path(&self) -> &Path {
+        self.0.as_path()
     }
 
     pub fn small_image_path(&self, output_root: impl AsRef<Path>) -> anyhow::Result<PathBuf> {

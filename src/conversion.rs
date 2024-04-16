@@ -4,15 +4,15 @@ use crate::images::SourceImagePath;
 use crate::input::{Minutes, Section};
 
 #[derive(Eq, PartialEq, Debug, Clone)]
-pub struct OutputImageFilesForConversion {
-    pub source_image_path: Box<Path>,
+pub struct OutputImageFilesForConversion<'source> {
+    pub source_image_path: &'source Path,
     pub small_image: PathBuf,
     pub large_image: PathBuf,
 }
 
-impl OutputImageFilesForConversion {
+impl<'source> OutputImageFilesForConversion<'source> {
     fn try_from_image_path(
-        source_image_path: SourceImagePath,
+        source_image_path: &'source SourceImagePath,
         output_base_path: &Path,
     ) -> anyhow::Result<Self> {
         anyhow::Ok(Self {
@@ -30,18 +30,21 @@ struct ConversionImageFiles {
 }
 
 #[derive(Eq, PartialEq, Debug, Clone)]
-pub struct SectionForConversion {
+pub struct SectionForConversion<'source> {
     pub name: String,
-    pub image_files: Vec<OutputImageFilesForConversion>,
+    pub image_files: Vec<OutputImageFilesForConversion<'source>>,
 }
 
-impl SectionForConversion {
-    pub fn try_from_section(section: Section, output_base_path: &Path) -> anyhow::Result<Self> {
+impl<'source> SectionForConversion<'source> {
+    pub fn try_from_section(
+        section: &'source Section,
+        output_base_path: &Path,
+    ) -> anyhow::Result<Self> {
         anyhow::Ok(SectionForConversion {
-            name: section.name,
+            name: section.name.clone(),
             image_files: section
                 .image_files
-                .into_iter()
+                .iter()
                 .map(|i| OutputImageFilesForConversion::try_from_image_path(i, output_base_path))
                 .collect::<anyhow::Result<_>>()?,
         })
@@ -49,17 +52,17 @@ impl SectionForConversion {
 }
 
 #[derive(Debug)]
-pub struct MinutesForConversion {
-    pub sections: Vec<SectionForConversion>,
+pub struct MinutesForConversion<'source> {
+    pub sections: Vec<SectionForConversion<'source>>,
 }
 
-pub fn create_minutes_for_conversion(
-    minutes: Minutes,
+pub fn create_minutes_for_conversion<'source>(
+    minutes: &'source Minutes,
     output_base_path: &Path,
-) -> anyhow::Result<MinutesForConversion> {
+) -> anyhow::Result<MinutesForConversion<'source>> {
     let sections: Vec<_> = minutes
         .sections
-        .into_iter()
+        .iter()
         .map(|s| SectionForConversion::try_from_section(s, output_base_path))
         .collect::<anyhow::Result<_>>()?;
     anyhow::Ok(MinutesForConversion { sections })
@@ -77,9 +80,9 @@ mod tests {
     #[test]
     fn create_output_images() {
         let source = OutputImageFilesForConversion {
+            source_image_path: Path::new("/home/images/source/file"),
             large_image: PathBuf::from("/home/images/a/large_file"),
             small_image: PathBuf::from("/home/images/a/small_file"),
-            source_image_path: Path::new("/home/images/source/file").into(),
         };
         let online_base_path = "http://localhost/documents";
         let files = OutputImageFiles::create(&source, online_base_path).unwrap();

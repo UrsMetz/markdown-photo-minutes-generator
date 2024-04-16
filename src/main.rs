@@ -26,7 +26,7 @@ fn main() -> anyhow::Result<()> {
 
     let for_conversion =
         markdown_photo_minutes_generator::conversion::create_minutes_for_conversion(
-            minutes,
+            &minutes,
             options.output_root_path.as_path(),
         )?;
 
@@ -36,12 +36,12 @@ fn main() -> anyhow::Result<()> {
             .flat_map(|s| s.image_files)
             .try_for_each(|f| {
                 lib::image_operations::save_as_resized_image(
-                    &f.source_image_path,
+                    f.source_image_path,
                     f.large_image,
                     1.0,
                 )?;
                 lib::image_operations::save_as_resized_image(
-                    &f.source_image_path,
+                    f.source_image_path,
                     f.small_image,
                     0.3,
                 )?;
