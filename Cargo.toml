@@ -3,6 +3,7 @@ name = "markdown-photo-minutes-generator"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
+readme = "README.md"
 
 [dependencies]
 anyhow = "1"
