@@ -86,9 +86,7 @@ mod cmdparams {
         let input_root_path = bpaf::positional("INPUT");
         let output_root_path = bpaf::positional::<PathBuf>("OUTPUT");
         let online_base_path = bpaf::positional::<String>("ONLINE_BASE_PATH");
-        let skip_image_conversion = bpaf::long("skip-image-conversion")
-            .argument::<bool>("SKIP_IMAGE_CONVERSION")
-            .fallback(false);
+        let skip_image_conversion = bpaf::long("skip-image-conversion").flag(true, false);
 
         bpaf::construct!(ImageConversionOptions {
             skip_image_conversion,
@@ -113,8 +111,22 @@ mod cmdparams {
 
             assert_that!(opts.input_root_path).is_equal_to(PathBuf::from("/a"));
             assert_that!(opts.output_root_path).is_equal_to(PathBuf::from("/b"));
-            assert_that!(opts.skip_image_conversion).is_equal_to(false);
+            assert_that!(opts.skip_image_conversion).is_false();
             assert_that!(opts.online_base_path).is_equal_to("http://localhost/output".to_string());
+        }
+
+        #[test]
+        fn skip_image_conversion_flag_is_set_to_true_when_specified() {
+            let opts = options()
+                .run_inner(&[
+                    "--skip-image-conversion",
+                    "/a",
+                    "/b",
+                    "http://localhost/output",
+                ])
+                .expect("options should be parsable");
+
+            assert_that!(opts.skip_image_conversion).is_true();
         }
 
         #[test]
