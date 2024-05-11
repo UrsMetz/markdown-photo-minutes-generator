@@ -11,9 +11,15 @@ pub fn save_as_resized_image<S: AsRef<Path>, D: AsRef<Path>>(
     dest_image_path: D,
     ratio: f32,
 ) -> anyhow::Result<()> {
+    if ratio == 1.0 {
+        fs_err::copy(source_image_path, dest_image_path)?;
+        return Ok(());
+    }
+
     let source_image = image::io::Reader::open(&source_image_path)
         .with_context(|| "source file does not exist")?
         .decode()?;
+
     let source_width = source_image.width();
     let source_height = source_image.height();
     let new_width = calculate_new_dimension(ratio, source_width);
@@ -106,6 +112,28 @@ mod tests {
         assert_that!(dynamic_image.width()).is_greater_than_or_equal_to(68);
         assert_that!(dynamic_image.height()).is_less_than_or_equal_to(144);
         assert_that!(dynamic_image.height()).is_greater_than_or_equal_to(140);
+
+        Ok(())
+    }
+
+    #[test]
+    fn copies_input_image_when_ratio_is_1() -> anyhow::Result<()> {
+        let dir = tempfile::tempdir()?;
+        let section_path = dir.path().join("abc");
+        let dest_path = dir.path().join("dest");
+        fs_err::create_dir(section_path)?;
+        let source_image_path = Path::new("./src/empty-100x200.jpg");
+
+        fs_err::create_dir(&dest_path)?;
+        let dest_image_path = dest_path.join("abc.dest.jpg");
+
+        save_as_resized_image(source_image_path, dest_image_path.as_path(), 1.0)?;
+
+        assert_that!(dest_image_path).exists();
+        let input_image = image::io::Reader::open(source_image_path)?.decode()?;
+        let output_image = image::io::Reader::open(dest_image_path)?.decode()?;
+
+        assert_that!(output_image).is_equal_to(input_image);
 
         Ok(())
     }
