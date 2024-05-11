@@ -24,12 +24,6 @@ impl<'source> OutputImageFilesForConversion<'source> {
 }
 
 #[derive(Eq, PartialEq, Debug, Clone)]
-struct ConversionImageFiles {
-    small_image: PathBuf,
-    large_image: PathBuf,
-}
-
-#[derive(Eq, PartialEq, Debug, Clone)]
 pub struct SectionForConversion<'source> {
     pub name: &'source str,
     pub image_files: Vec<OutputImageFilesForConversion<'source>>,
