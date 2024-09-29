@@ -12,6 +12,12 @@ pub fn save_as_resized_image<S: AsRef<Path>, D: AsRef<Path>>(
     ratio: f32,
 ) -> anyhow::Result<()> {
     if ratio == 1.0 {
+        fs_err::create_dir_all(
+            dest_image_path
+                .as_ref()
+                .parent()
+                .with_context(|| "image destination path has no parent")?,
+        )?;
         fs_err::copy(source_image_path, dest_image_path)?;
         return Ok(());
     }
@@ -125,6 +131,29 @@ mod tests {
         let source_image_path = Path::new("./src/empty-100x200.jpg");
 
         fs_err::create_dir(&dest_path)?;
+        let dest_image_path = dest_path.join("abc.dest.jpg");
+
+        save_as_resized_image(source_image_path, dest_image_path.as_path(), 1.0)?;
+
+        assert_that!(dest_image_path).exists();
+        let input_image = image::ImageReader::open(source_image_path)?.decode()?;
+        let output_image = image::ImageReader::open(dest_image_path)?.decode()?;
+
+        assert_that!(output_image).is_equal_to(input_image);
+
+        Ok(())
+    }
+
+    #[test]
+    fn creates_parent_directories_when_ratio_is_1() -> anyhow::Result<()> {
+        let dir = tempfile::tempdir()?;
+        let section_path = dir.path().join("abc");
+        let dest_suffix_path = dir.path().join("dest");
+        let dest_path = dest_suffix_path.join("subdir");
+        fs_err::create_dir(section_path)?;
+        let source_image_path = Path::new("./src/empty-100x200.jpg");
+
+        fs_err::create_dir(&dest_suffix_path)?;
         let dest_image_path = dest_path.join("abc.dest.jpg");
 
         save_as_resized_image(source_image_path, dest_image_path.as_path(), 1.0)?;
