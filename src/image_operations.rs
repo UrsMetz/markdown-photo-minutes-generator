@@ -16,7 +16,7 @@ pub fn save_as_resized_image<S: AsRef<Path>, D: AsRef<Path>>(
         return Ok(());
     }
 
-    let source_image = image::io::Reader::open(&source_image_path)
+    let source_image = image::ImageReader::open(&source_image_path)
         .with_context(|| "source file does not exist")?
         .decode()?;
 
@@ -107,7 +107,7 @@ mod tests {
         save_as_resized_image(source_image_path, dest_image_path.as_path(), 0.5)?;
 
         assert_that!(dest_image_path).exists();
-        let dynamic_image = image::io::Reader::open(dest_image_path)?.decode()?;
+        let dynamic_image = image::ImageReader::open(dest_image_path)?.decode()?;
         assert_that!(dynamic_image.width()).is_less_than_or_equal_to(72);
         assert_that!(dynamic_image.width()).is_greater_than_or_equal_to(68);
         assert_that!(dynamic_image.height()).is_less_than_or_equal_to(144);
@@ -130,8 +130,8 @@ mod tests {
         save_as_resized_image(source_image_path, dest_image_path.as_path(), 1.0)?;
 
         assert_that!(dest_image_path).exists();
-        let input_image = image::io::Reader::open(source_image_path)?.decode()?;
-        let output_image = image::io::Reader::open(dest_image_path)?.decode()?;
+        let input_image = image::ImageReader::open(source_image_path)?.decode()?;
+        let output_image = image::ImageReader::open(dest_image_path)?.decode()?;
 
         assert_that!(output_image).is_equal_to(input_image);
 
@@ -155,7 +155,7 @@ mod tests {
         save_as_resized_image(source_image_path, dest_image_path.as_path(), 0.5)?;
 
         assert_that!(dest_image_path).exists();
-        let dynamic_image = image::io::Reader::open(dest_image_path)?.decode()?;
+        let dynamic_image = image::ImageReader::open(dest_image_path)?.decode()?;
         assert_that!(dynamic_image.width()).is_less_than_or_equal_to(72);
         assert_that!(dynamic_image.width()).is_greater_than_or_equal_to(68);
         assert_that!(dynamic_image.height()).is_less_than_or_equal_to(144);
