@@ -31,7 +31,7 @@ fn main() -> anyhow::Result<()> {
                 lib::image_operations::save_as_resized_image(
                     f.source_image_path,
                     f.small_image,
-                    0.3,
+                    0.1,
                 )?;
                 anyhow::Ok(())
             })?;
@@ -80,6 +80,7 @@ mod cmdparams {
         pub output_root_path: PathBuf,
         pub online_base_path: String,
         pub skip_image_conversion: bool,
+        pub thumbnail_ratio: f32,
     }
 
     pub fn options() -> OptionParser<ImageConversionOptions> {
@@ -87,9 +88,11 @@ mod cmdparams {
         let output_root_path = bpaf::positional::<PathBuf>("OUTPUT");
         let online_base_path = bpaf::positional::<String>("ONLINE_BASE_PATH");
         let skip_image_conversion = bpaf::long("skip-image-conversion").flag(true, false);
+        let thumbnail_ratio = bpaf::long("thumbnail-ratio").argument::<f32>("THUMBNAIL_RATIO");
 
         bpaf::construct!(ImageConversionOptions {
             skip_image_conversion,
+            thumbnail_ratio,
             input_root_path,
             output_root_path,
             online_base_path,
@@ -106,13 +109,20 @@ mod cmdparams {
         #[test]
         fn options_parsing_works() {
             let opts = options()
-                .run_inner(&["/a", "/b", "http://localhost/output"])
+                .run_inner(&[
+                    "--thumbnail-ratio",
+                    "0.3",
+                    "/a",
+                    "/b",
+                    "http://localhost/output",
+                ])
                 .expect("options should be parsable");
 
             assert_that!(opts.input_root_path).is_equal_to(PathBuf::from("/a"));
             assert_that!(opts.output_root_path).is_equal_to(PathBuf::from("/b"));
             assert_that!(opts.skip_image_conversion).is_false();
             assert_that!(opts.online_base_path).is_equal_to("http://localhost/output".to_string());
+            assert_that!(opts.thumbnail_ratio).is_equal_to(0.3);
         }
 
         #[test]
@@ -120,6 +130,8 @@ mod cmdparams {
             let opts = options()
                 .run_inner(&[
                     "--skip-image-conversion",
+                    "--thumbnail-ratio",
+                    "0.3",
                     "/a",
                     "/b",
                     "http://localhost/output",
@@ -127,6 +139,16 @@ mod cmdparams {
                 .expect("options should be parsable");
 
             assert_that!(opts.skip_image_conversion).is_true();
+        }
+
+        #[test]
+        fn thumbnail_ratio_must_be_specified() {
+            let failure = options()
+                .run_inner(&["/a", "/b", "http://localhost/output"])
+                .expect_err("options must not be parsable");
+
+            assert_that!(failure.unwrap_stderr())
+                .contains("expected `--thumbnail-ratio=THUMBNAIL_RATIO`");
         }
 
         #[test]

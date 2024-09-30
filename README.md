@@ -22,8 +22,9 @@ It offers the following processing steps:
 
 ## How to run the program
 
-The program has three mandatory arguments:
+The program has four mandatory arguments:
 
+* the thumbnail ratio (passed as `--thumbnail-ratio <float>`)
 * the directory that contains the `INPUT` structure
 * the directory where the `OUTPUT` should be written to
 * the `BASE_ONLINE_PATH` where the created images will be hosted
@@ -31,7 +32,7 @@ The program has three mandatory arguments:
 So an example invocation would be
 
 ```shell
-cargo run -- /path/to/input-files /path/to/output-files http://localhost/where-created-images-are-hosted
+cargo run -- --thumbnail-ratio 0.3 /path/to/input-files /path/to/output-files http://localhost/where-created-images-are-hosted
 ```
 
 and would do the following:
