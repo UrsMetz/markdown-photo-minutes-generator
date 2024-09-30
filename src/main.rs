@@ -31,7 +31,7 @@ fn main() -> anyhow::Result<()> {
                 lib::image_operations::save_as_resized_image(
                     f.source_image_path,
                     f.small_image,
-                    0.1,
+                    options.thumbnail_ratio,
                 )?;
                 anyhow::Ok(())
             })?;
